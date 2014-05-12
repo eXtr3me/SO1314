@@ -10,6 +10,7 @@ typedef struct peca *pPeca;
 
 typedef struct peca
 {
+	int id;
 	int numEsq;
 	int numDir;
 	pPeca prox;
@@ -21,17 +22,18 @@ void mostraPecas(pPeca pecas){
 	while (mostrar -> prox != NULL)
 	{
 		
-		printf("PECA= | %d | %d |\n",mostrar -> numEsq, mostrar -> numDir);
+		printf("PECA ID %d= | %d | %d |\n",mostrar-> id, mostrar -> numEsq, mostrar -> numDir);
 		mostrar = mostrar -> prox; 
 	}
 	if(mostrar -> prox == NULL){
-		printf("PECA= | %d | %d |\n",mostrar -> numEsq, mostrar -> numDir);
+		printf("PECA ID %d= | %d | %d |\n",mostrar-> id, mostrar -> numEsq, mostrar -> numDir);
 	}
 }
 pPeca geraPecas(){
 	
 	int i = 0;
 	int j = 0;
+	int id = 0;
 	pPeca auxHead = NULL;
 	pPeca auxCurr = NULL; // Peca currente
 	pPeca auxUltPeca = NULL; // Peca currente
@@ -42,6 +44,7 @@ pPeca geraPecas(){
 		{
 			
 			auxCurr = (pPeca)malloc(sizeof(Peca));
+			auxCurr -> id = id++;
 			auxCurr -> numEsq = i;
 			auxCurr -> numDir = j;
 			auxCurr -> prox = NULL;
