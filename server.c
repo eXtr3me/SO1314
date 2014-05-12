@@ -12,11 +12,13 @@
 #define PIPE_NAME "servidor"
 #define BUFFER_SIZE 200
 int pipe_fd;
-
-void ProcSignal(int signal){
+void sair(){
 	printf("BYE BYE!!!\n");	
 	close(pipe_fd);
 	unlink(PIPE_NAME); //Remove o PIPE
+}
+void ProcSignal(int signal){
+	sair();
 }
 void clientCOM(char *clientPipeName){
 	// cliente <- servidor
@@ -84,7 +86,7 @@ void serverStart(){
 			exit(-1);
 		}
 		
-		if(resp == 0) break;
+		//if(resp == 0) break;
 		
 		if(resp > 0){
 			
@@ -94,10 +96,17 @@ void serverStart(){
 			
 			
 			
-			printf("Foram lidos %d bytes sou o Cliente %s \n",resp,buffer);
-			
-			sleep(1);
-			clientCOM(buffer);
+			//printf("Foram lidos %d bytes sou o Cliente %s \n",resp,buffer);
+			if(strncmp(buffer,"close")== 0){
+				sair();	
+				exit(0);
+			}else if(strncmp(buffer,"show")== 0){
+				//TODO ver especificação par o comando Show		
+			}else{
+				
+				sleep(1);
+				clientCOM(buffer);
+			}
 			
 		}
 		
@@ -107,8 +116,43 @@ void serverStart(){
 	unlink(PIPE_NAME); //Remove o PIPE
 }
 
+int secondServer(){
+	if (!access(PIPE_NAME,F_OK))
+	{
+		int tempPipe_fd;
+		if ((tempPipe_fd = open(PIPE_NAME,O_WRONLY) )== -1)
+		{
+			printf("ERROO\n");
+		}else{
+			char command[BUFFER_SIZE +1 ];
+			int resp;
+			printf("insira Commando:\n");
+			scanf("%s",command);
+			//sprintf(command,"%d",getpid());
+			if ((resp = write(tempPipe_fd,command,strlen(command))) == -1)//Tenta escrever no PIPE
+			{
+				perror("ERRO ao escrever no fifo\n");
+				return 1;
+			}
+			sleep(1);
+			close(pipe_fd);
+			
+		}
+		
+		return 0;
+	}
+		
+	return -1;	
+}
+
 int main(){
 	pid_t pid;
+	
+	//Caso ja exista um servidor, executa momentaneamente
+	if(secondServer() == 0){
+		exit(0);
+	}
+	
 	// nao esta a matar, mas ta bemmm :P
 	if(signal(SIGUSR1, ProcSignal)==SIG_ERR){
 		perror("Erro sinal");
