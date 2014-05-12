@@ -8,6 +8,7 @@
 #define PIPE_NAME "servidor"
 #define BUFFER_SIZE 200
 int main(){
+	// test	
 	// cliente -> servidor
 	int pipe_fd;
 	int open_mode = O_WRONLY;// O pipe só lê ou so escreve nunca os dois ao mesmo tempo
