@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-
-#include <instrucao.h>
+#include "instrucao.h"
 
 #define NUM_TOTAL_PECAS 6
 
