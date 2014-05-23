@@ -14,7 +14,37 @@ int sai = -1;
 char clientPipeName[20];
 
 
+char* preparaComando(char* comand){
+	char* token;
+	char* saveptr;
+	char* result = "";
+	
+	token = strtok_r(comand, " ", & saveptr);
+	if(token == NULL){
+		
+		return comand;
+	}
+	while( token != NULL){
+		
+		strcat(token, "\0");
+		
+		//strcat(commandoValidado, "\0");
+		//fflush(stdout);
+			
+		if(strcmp(result,"") == 0){
+			result = token;
+		 }
+		 else{
+			strcat(result, " ");
+			strcat(result, token);
+			strcat(result, "\0");
+		 }
+		token = strtok_r(NULL, " ", & saveptr);
+	}
+	return result;
+}
 void sair(){
+	sleep(1);
 	close(cliente_pipe_fd);
 	unlink(clientPipeName);
 	sai = 0;
@@ -38,8 +68,18 @@ void ServerWriteCOM(InsSC ins, int validaIns){
 		}
 		if(validaIns == 0){
 			//TODO VALIDA INSTRUCAO
-			printf("insira instrução\n");
-			scanf("%s",ins.instrucacao);
+			
+			printf("\ninsira instrução\n");
+			fflush(stdout);
+			//scanf("%s",comand);
+			fgets(ins.instrucacao,sizeof(ins.instrucacao),stdin);
+			
+			sprintf(ins.instrucacao,"%s",preparaComando(ins.instrucacao)); // ValidaComando
+
+			if(strcmp(ins.instrucacao,"\0") == 0 )
+			{
+				printf("commando invalido\n");
+			}
 		}
 		
 		if ((resp = write(pipe_fd,&ins,sizeof(InsSC))) == -1)//Tenta escrever no PIPE
@@ -48,7 +88,7 @@ void ServerWriteCOM(InsSC ins, int validaIns){
 			exit(-1);
 		}
 		
-		if(strcmp(ins.instrucacao,"sair") == 0){
+		if(strncmp(ins.instrucacao,"sair",sizeof(TAM_STRING +1)) == 0){
 			sair();
 		}
 		sleep(1);
@@ -113,6 +153,9 @@ void createClientPipe(){
 
 int main(){
 	// test
+	
+	
+	//main program
 	InsSC ins; // Instrucao
 	ins.pid = getpid();
 	ins.isServer = -1; // Não é servidor

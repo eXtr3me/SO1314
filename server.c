@@ -15,6 +15,7 @@
 int pipe_fd;
 void sair(){
 	printf("BYE BYE!!!\n");	
+	sleep(1);	
 	close(pipe_fd);
 	unlink(PIPE_NAME); //Remove o PIPE
 	exit(0);
@@ -89,10 +90,14 @@ void serverStart(){
 			exit(-1);
 		}
 		
+		if(ins.isServer == 0){
+			
+				printf("O Admin mandou me desligar :'('\n");
+				sair();
+		}
 		//if(resp == 0) break;
 		
 		if(resp > 0){
-			printf("ins : %s,\n",ins.instrucacao);
 			//printf("Foram lidos %d bytes sou o Cliente %s \n",resp,buffer);
 			if(strcmp(ins.instrucacao,"") == 0){
 				//sair();	
@@ -101,10 +106,13 @@ void serverStart(){
 				printf("Foram lidos %d bytes sou o Cliente %s \n",resp,clientPipeName);
 				sleep(1);
 				clientCOM(clientPipeName);
-			}else if(strcmp(ins.instrucacao,"sair")== 0){
+			}else if(strncmp(ins.instrucacao,"sair",sizeof(TAM_STRING +1))== 0){
 				printf("O Cliente %s saiu\n",clientPipeName);
 				printf("Só para testar e para já vou sair tbm\n");
 				sair();
+			}else{
+				sprintf(clientPipeName,"%d",ins.pid);
+				clientCOM(clientPipeName);
 			}
 			
 		}
@@ -123,12 +131,16 @@ int secondServer(){
 		{
 			printf("ERROO\n");
 		}else{
-			char command[BUFFER_SIZE +1 ];
+			//char command[BUFFER_SIZE +1 ];
 			int resp;
+			InsSC ins; // Instrucao
+			ins.pid = getpid();
+			ins.isServer = 0; //  é servidor
+			
 			printf("insira Commando:\n");
-			scanf("%s",command);
+			scanf("%s",ins.instrucacao);
 			//sprintf(command,"%d",getpid());
-			if ((resp = write(tempPipe_fd,command,strlen(command))) == -1)//Tenta escrever no PIPE
+			if ((resp = write(tempPipe_fd,&ins,sizeof(InsSC))) == -1)//Tenta escrever no PIPE
 			{
 				perror("ERRO ao escrever no fifo\n");
 				return 1;
