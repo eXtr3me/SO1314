@@ -88,7 +88,7 @@ void ServerWriteCOM(InsSC ins, int validaIns){
 			exit(-1);
 		}
 		
-		if(strncmp(ins.instrucacao,"sair",sizeof(TAM_STRING +1)) == 0){
+		if(strncmp(ins.instrucacao,"exit",sizeof(TAM_STRING +1)) == 0){
 			sair();
 		}
 		sleep(1);

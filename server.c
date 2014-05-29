@@ -20,16 +20,73 @@ void sair(){
 	unlink(PIPE_NAME); //Remove o PIPE
 	exit(0);
 }
+char* gereInstrucoes(InsSC ins){
+		int i = 0;
+		char *cmd[4];
+		
+		char* token;
+		char* saveptr;
+
+		token = strtok_r(ins.instrucacao, " ", & saveptr);
+		if(token == NULL){
+			printf("null");
+			cmd[i++] = ins.instrucacao;
+		}else{
+			
+			while( token != NULL){
+				
+				
+				
+				//strcat(commandoValidado, "\0");
+				//fflush(stdout);
+				
+				cmd[i++] =  token;
+				//strcat(cmd[i], "\0"); 
+				token = strtok_r(NULL, " ", & saveptr);
+			}
+		}	
+		
+		
+		
+		if(i>0){
+
+			//Comandos reconhecidos pelo cliente
+			char *resp;
+			if(strstr(cmd[0],"exit") != NULL){
+				resp = ("recebi o comando exit ");
+				sair();
+			}else if(strstr(cmd[0],"logout") != NULL){
+				resp=("recebi o comando logout \n");
+			}else if(strstr(cmd[0],"satus") != NULL){
+				resp=("recebi o comando satus \n");
+			}else if(strstr(cmd[0],"users") != NULL){
+				resp=("recebi o comando users \n");
+			}else if(strstr(cmd[0],"new") != NULL){
+				resp=("recebi o comando new \n");
+			}else if(strstr(cmd[0],"play") != NULL){
+				resp=("recebi o comando play \n");
+			}else if(strstr(cmd[0],"quit") != NULL){
+				resp=("recebi o comando quit \n");
+			}else{
+				//printf("Comando não conhecido");
+				return "";
+			}
+			return resp;
+		}
+		return "";
+}
+
 void ProcSignal(int signal){
 	sair();
 }
-void clientCOM(char *clientPipeName){
+void clientCOM(char *clientPipeName, char msg[BUFFER_SIZE +1]){
 	// cliente <- servidor
-		
+		char buffer[BUFFER_SIZE +1];
 		int pipe_fd;
 		int open_mode = O_WRONLY;// O pipe só lê ou so escreve nunca os dois ao mesmo tempo
 		int resp;
-		char buffer[BUFFER_SIZE +1 ];
+		
+		strcpy(buffer, msg);
 		
 		if ((pipe_fd = open(clientPipeName,open_mode) )== -1)
 		{
@@ -37,7 +94,7 @@ void clientCOM(char *clientPipeName){
 			exit(-1);
 		}
 		
-		sprintf(buffer,"[SERVIDOR]Ola tudo bem, sou SERVIDOR %d",getpid()); 
+		
 		
 		if ((resp = write(pipe_fd,buffer,strlen(buffer))) == -1)//Tenta escrever no PIPE
 		{
@@ -45,10 +102,8 @@ void clientCOM(char *clientPipeName){
 			exit(-1);
 		}
 		
-		buffer[resp]='\0';
-		printf("Foram lidos %d bytes com o conteudo\n %s \n",resp,buffer);
-		
-		sleep(2);
+		buffer[strlen(msg)]='\0';		
+		sleep(1);
 		close(pipe_fd);
 		return;
 };
@@ -90,29 +145,30 @@ void serverStart(){
 			exit(-1);
 		}
 		
-		if(ins.isServer == 0){
-			
-				printf("O Admin mandou me desligar :'('\n");
-				sair();
-		}
 		//if(resp == 0) break;
 		
+			if(ins.isServer == 0){
+				
+					printf("O Admin mandou me desligar :'('\n");
+					sair();
+			}
 		if(resp > 0){
+			char *cmd;
+			sprintf(clientPipeName,"%d",ins.pid);	
 			//printf("Foram lidos %d bytes sou o Cliente %s \n",resp,buffer);
 			if(strcmp(ins.instrucacao,"") == 0){
 				//sair();	
 				//exit(0);
-				sprintf(clientPipeName,"%d",ins.pid);
+				
 				printf("Foram lidos %d bytes sou o Cliente %s \n",resp,clientPipeName);
 				sleep(1);
-				clientCOM(clientPipeName);
-			}else if(strncmp(ins.instrucacao,"sair",sizeof(TAM_STRING +1))== 0){
-				printf("O Cliente %s saiu\n",clientPipeName);
-				printf("Só para testar e para já vou sair tbm\n");
-				sair();
+				clientCOM(clientPipeName,"Cliente conectado!");
+				
+			}else if(strstr((cmd = gereInstrucoes(ins)),"") !=  0){
+				clientCOM(clientPipeName,cmd);
+				//sair();
 			}else{
-				sprintf(clientPipeName,"%d",ins.pid);
-				clientCOM(clientPipeName);
+				clientCOM(clientPipeName,"erro	");
 			}
 			
 		}
@@ -157,6 +213,18 @@ int secondServer(){
 }
 
 int main(){
+	/*
+	InsSC ins;
+	while(1)
+	{
+		
+		printf("insere:\n");
+		fgets(ins.instrucacao,sizeof(ins.instrucacao),stdin);
+		if(gereInstrucoes(ins) != 0){
+			 printf("erro\n");
+		}
+	}
+	*/
 	pid_t pid;
 	
 	//Caso ja exista um servidor, executa momentaneamente
@@ -180,7 +248,7 @@ int main(){
 			/* Processo filho */
 			printf("[filho] Sou o filho com PID=%d.\n",getpid());
 			serverStart();
-			exit(0);
+			//yexit(0);
 		default:
 			/* Processo pai */
 			printf("[Pai] Sou o processo pai e gerei o filho com PID=%d.\n",pid);
