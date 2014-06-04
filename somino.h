@@ -1,6 +1,7 @@
 #ifndef SOMINO_H
 #define SOMINO_H
 
+#include <fcntl.h>
 
 typedef struct peca  Pecas, *pPecas;
 
@@ -16,7 +17,8 @@ struct peca {
 typedef struct jogador Jogadores;
 
 struct jogador {
-	int id;							// id de jogador (pid)
+	pid_t pid;	// id de jogador (pid)
+	int isPlaying;		// se tiver a jogar esta a 0				
 	char nome[50];					// nome do jogador
 	Pecas Peca[28];					// Peças do jogador
 };

@@ -5,14 +5,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "instrucao.h"
+#include "somino.h"
 
 #define PIPE_NAME "servidor"
 #define BUFFER_SIZE 200
 int cliente_pipe_fd;
+int pipe_fd;
 int sai = -1;
 char clientPipeName[20];
-
+InsSC ins; 
 
 char* preparaComando(char* comand){
 	char* token;
@@ -55,9 +58,9 @@ void verifyServer(){
 		exit(-1);
 	}
 }
-void ServerWriteCOM(InsSC ins, int validaIns){
+void ServerWriteCOM(int validaIns){
 		// cliente -> servidor
-		int pipe_fd;
+	
 		int open_mode = O_WRONLY;// O pipe só lê ou so escreve nunca os dois ao mesmo tempo
 		int resp;
 		
@@ -91,7 +94,6 @@ void ServerWriteCOM(InsSC ins, int validaIns){
 		if(strncmp(ins.instrucacao,"exit",sizeof(TAM_STRING +1)) == 0){
 			sair();
 		}
-		sleep(1);
 		close(pipe_fd);
 		
 		
@@ -100,7 +102,7 @@ void ServerWriteCOM(InsSC ins, int validaIns){
 void ServerReadCOM(){
 	char buffer[BUFFER_SIZE +1 ];
 	int resp;
-	
+
 	int open_mode = O_RDONLY;// O pipe só lê ou so escreve(O_WRONLY) nunca os dois ao mesmo tempo; O_NONBLOCK faz com que o PIPE nao fique ha espera de receber alguma coisa
 
 	if ((cliente_pipe_fd = open(clientPipeName,open_mode) )== -1)
@@ -108,7 +110,6 @@ void ServerReadCOM(){
 		perror("ERRO ao abrir o fifo\n");
 		exit(-1);
 	}
-	sleep(1);
 	
 	while(1)
 	{
@@ -117,15 +118,15 @@ void ServerReadCOM(){
 			perror("ERRO ao ler do fifo\n");
 			exit(-1);
 		}
-		
+
 		if(resp == 0) break;
 		if(resp > 0){
 			buffer[resp]='\0';
 			printf("Foram lidos %d bytes com o conteudo\n %s \n",resp,buffer);
 		}
-		
+
 	}
-	
+
 	close(cliente_pipe_fd);
 	//unlink(pipeName);
 }
@@ -150,13 +151,35 @@ void createClientPipe(){
 	}
 	
 }
+void comunicacoes(){
+	
+	while(sai != 0){
+		ServerReadCOM();
+		ServerWriteCOM(0);	
+	}
+	exit(0);
+}
 
+void ProcSignal(int signal){
+	verifyServer();//verificar se já esta o servidor a correr
+	if(signal == SIGUSR1 || signal == SIGUSR2){
+		close(pipe_fd);
+		printf("[%d]]É a minha vez de jogar\n\n\n\n",ins.pid);
+		ServerWriteCOM(0);
+		comunicacoes();
+	}
+}
 int main(){
 	// test
 	
 	
+	if(signal(SIGUSR1, ProcSignal)==SIG_ERR){
+		perror("Erro sinal");
+	}
+	if(signal(SIGUSR2, ProcSignal)==SIG_ERR){
+		perror("Erro sinal");
+	}
 	//main program
-	InsSC ins; // Instrucao
 	ins.pid = getpid();
 	ins.isServer = -1; // Não é servidor
 	sprintf(ins.instrucacao,"%s",""); 
@@ -166,12 +189,8 @@ int main(){
 	
 	verifyServer();//verificar se já esta o servidor a correr
 	createClientPipe();
-	ServerWriteCOM(ins,-1);	
-	while(sai != 0){
-		ServerReadCOM();
-		ServerWriteCOM(ins,0);	
-		
-	}
+	ServerWriteCOM(-1);	
+	comunicacoes();
 	
 	 //Remove o PIPE
 	

@@ -14,3 +14,10 @@ struct instruncaoStruct{
 	char instrucacao[TAM_STRING + 1 ];
 };
 
+ 
+typedef struct instruncaoServerStruct InsServerStruct;
+struct instruncaoServerStruct{
+	int isYourTurn;
+	char* msg;
+};
+
